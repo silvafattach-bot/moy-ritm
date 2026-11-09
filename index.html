@@ -1611,7 +1611,7 @@ function renderAnalytics(){
 }
 function sendSystemNotification(title,body){
   if(!("Notification" in window) || Notification.permission!=="granted")return false;
-  try {new Notification(title,{body,tag:"moy-ritm-"+title+"-"+body});return true;}
+  try {new Notification(title,{body,tag:"moy-ritm-"+Date.now()+"-"+Math.random().toString(36).slice(2)});return true;}
   catch(e){console.warn("Системное уведомление недоступно",e);return false;}
 }
 async function requestNotifications(){
