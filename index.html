@@ -438,9 +438,30 @@ body.dark .hero{background:linear-gradient(125deg,#353159,#47374d,#564333)}
 .week-bar{position:absolute;bottom:0;width:100%;background:linear-gradient(0deg,#8173d9,#8ed8bd);border-radius:11px;animation:grow .8s ease-out}
 @keyframes grow{from{height:0}}
 .week-col small{font-size:12px}
+.chart-period{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.chart-period .filter{padding:8px 11px;white-space:nowrap}
+.chart-scroll{overflow-x:auto;max-width:100%;padding-bottom:5px}
+.week-chart.month-view{min-width:840px;gap:4px;justify-content:flex-start}
+.week-chart.month-view .week-col{min-width:23px;max-width:none;gap:6px}
+.week-chart.month-view .week-col small{font-size:10px}
+.week-chart .week-col{cursor:default}
+@media(max-width:560px){.chart-period .filter{font-size:12px;padding:7px 9px}.week-chart.month-view{min-width:810px}}
 .activity-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;margin-top:18px}
 .activity-day{aspect-ratio:1.25;border-radius:11px;background:var(--accent-soft);display:grid;place-items:center;font-size:12px;color:var(--text);transition:transform .2s}
 .activity-day:hover{transform:scale(1.07)}
+.activity-day.today{outline:2px solid var(--accent);outline-offset:2px;font-weight:800}
+.activity-day:disabled{opacity:.3;cursor:default}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 5px}
+.calendar-head strong{font-size:17px;text-transform:capitalize}
+.calendar-head button{min-width:42px}
+.calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+.calendar-empty{aspect-ratio:1.25}
+.activity-day{border:0;cursor:pointer;font:inherit}
+.activity-day:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.day-detail-list{list-style:none;padding:0;margin:14px 0;display:grid;gap:9px}
+.day-detail-list li{padding:10px 12px;border-radius:12px;background:var(--accent-soft);line-height:1.5}
+.day-detail-list .completed{color:var(--green-text);font-weight:700}
+.day-detail-list .incomplete{color:var(--muted)}
 .activity-day.level-1{background:#e0d9ff}.activity-day.level-2{background:#bfb4f0}.activity-day.level-3{background:#9787df;color:white}.activity-day.level-4{background:#6e60c0;color:white}
 .settings-row{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}
 .setting-toggle{display:flex;gap:12px;align-items:center;margin:15px 0;cursor:pointer}
@@ -449,6 +470,17 @@ body.dark .hero{background:linear-gradient(125deg,#353159,#47374d,#564333)}
 .nav-inner{width:min(100%,850px)}
 @media(max-width:560px){.stats-grid{grid-template-columns:repeat(2,1fr)}.nav-btn{font-size:10px;padding:6px 2px}.nav-btn span{font-size:20px}.hero{padding:27px 22px}.idea-status-select{width:100%}.activity-calendar{gap:5px}.activity-day{border-radius:7px}}
 
+
+/* Награды: приглушённые до получения, яркие после */
+.award-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.award-tile{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:14px 8px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(120,110,145,.14)}
+.award-tile .award-icon{font-size:32px;line-height:1.2}
+.award-tile strong{font-size:13px}
+.award-tile.locked{opacity:.48;filter:grayscale(1)}
+.award-tile.earned{background:var(--yellow)}
+@media(max-width:480px){.award-grid{grid-template-columns:1fr}.award-tile{flex-direction:row;text-align:left;flex-wrap:wrap;justify-content:center}}
+  .demo-notice{margin:12px auto 0;max-width:960px;padding:12px 18px;border-radius:14px;background:#f1e9fb;color:#51416b;font-size:14px;line-height:1.5}
+  @media(prefers-color-scheme:dark){.demo-notice{background:#e8ddf3;color:#443554}}
 </style>
 </head>
 <body>
@@ -466,6 +498,8 @@ body.dark .hero{background:linear-gradient(125deg,#353159,#47374d,#564333)}
       <button class="icon-btn" id="settingsBtn" title="Настройки" aria-label="Настройки">⚙️</button>
     </div>
   </header>
+
+  <div class="demo-notice" role="note"><strong>Демонстрационная версия</strong> · Все записи и результаты вымышлены. Можно отмечать привычки и пробовать функции — личные данные не используются.</div>
 
   <div class="hero">
     <div class="eyebrow" id="todayLabel"></div>
@@ -550,8 +584,8 @@ body.dark .hero{background:linear-gradient(125deg,#353159,#47374d,#564333)}
     <section class="section" id="analyticsSection">
       <div class="section-title"><h2>📊 Аналитика</h2></div>
       <div class="stats-grid" id="analyticsStats"></div>
-      <div class="card"><h3>Прогресс за 7 дней</h3><p class="small">Доля выполненных ежедневных привычек</p><div id="weekChart" class="week-chart"></div></div>
-      <div class="card"><h3>Календарь активности</h3><p class="small">Последние 35 дней: чем насыщеннее цвет, тем больше выполнено привычек</p><div id="activityCalendar" class="activity-calendar"></div></div>
+      <div class="card"><div class="section-title"><h3 id="chartTitle">Прогресс за 7 дней</h3><div class="chart-period" role="group" aria-label="Период графика"><button type="button" class="filter selected" data-chart-period="7" aria-pressed="true">7 дней</button><button type="button" class="filter" data-chart-period="30" aria-pressed="false">Месяц</button></div></div><p class="small" id="chartDescription">Процент выполнения привычек за каждый день.</p><div class="chart-scroll"><div id="weekChart" class="week-chart"></div></div></div>
+      <div class="card"><h3>Календарь активности</h3><p class="small">Выбери день, чтобы посмотреть результаты. Чем насыщеннее цвет, тем больше привычек выполнено.</p><div class="calendar-head"><button type="button" class="btn secondary" id="prevCalendarMonth" aria-label="Предыдущий месяц">←</button><strong id="calendarMonthTitle"></strong><button type="button" class="btn secondary" id="nextCalendarMonth" aria-label="Следующий месяц">→</button></div><div class="calendar-weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div id="activityCalendar" class="activity-calendar"></div></div>
     </section>
     <section class="section" id="profileSection">
       <div class="section-title"><h2>⚙️ Профиль и настройки</h2></div>
@@ -596,11 +630,19 @@ body.dark .hero{background:linear-gradient(125deg,#353159,#47374d,#564333)}
   <button class="btn" id="dismissReminders" type="button">Понятно, закрыть</button>
 </div>
 
+<div class="modal-backdrop hidden" id="dayDetailBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dayDetailTitle">
+    <h2 id="dayDetailTitle">Результаты дня</h2>
+    <div id="dayDetailContent"></div>
+    <div class="modal-actions"><button type="button" class="btn secondary" id="closeDayDetail">Закрыть</button></div>
+  </div>
+</div>
+
 <script>
 "use strict";
 
 /* ===== Хранилище ===== */
-const STORAGE_KEY = "my-rhythm-tracker-v1";
+const STORAGE_KEY = "my-rhythm-demo-v1"; // Отдельное хранилище: личные записи не читаются и не меняются.
 
 const defaultData = () => ({
   version: 1,
@@ -609,6 +651,7 @@ const defaultData = () => ({
   tasks: [],
   ideas: [],
   history: {},
+  awards: {},
   settings: {theme:"light",notifications:false,taskReminders:true,habitReminders:false,habitReminderTime:"19:00",lastHabitReminder:""}
 });
 
@@ -651,6 +694,7 @@ function loadData() {
       ideas:Array.isArray(parsed.ideas)?parsed.ideas:[],
       history:parsed.history && typeof parsed.history==="object"
         ? parsed.history:{},
+      awards:parsed.awards && typeof parsed.awards==="object" ? parsed.awards:{},
       settings:{...defaults.settings,...parsed.settings}
     };
   } catch(e) {
@@ -659,7 +703,48 @@ function loadData() {
   }
 }
 
-let data = loadData();
+// Вымышленные данные для публичной демонстрации. Создаются только при первом открытии.
+function makeDemoData(){
+  const demo=defaultData();
+  const names=["Утренняя зарядка","Прогулка на свежем воздухе","Чтение 20 минут","Пить достаточно воды","Вечерняя растяжка"];
+  const now=new Date();
+  const ids=names.map((_,i)=>"demo-habit-"+i);
+  demo.habits=names.map((name,i)=>({id:ids[i],name,completed:false,createdAt:now.toISOString(),lastCompletedDate:null}));
+  // Заполняем последние 40 завершённых дней; каждый день выполнено 4 или 5 из 5.
+  // Это даёт правдоподобную историю и позволяет показать все три награды.
+  for(let ago=40;ago>=1;ago--){
+    const date=dateDaysAgo(ago);
+    const statuses={};const labels={};
+    ids.forEach((id,i)=>{
+      statuses[id]=((ago+i*3)%6!==0);
+      labels[id]=names[i];
+    });
+    demo.history[date]={habits:statuses,names:labels};
+  }
+  const today=localDate();
+  const todayStatus={};const todayNames={};
+  ids.forEach((id,i)=>{const done=i<2;todayStatus[id]=done;todayNames[id]=names[i];demo.habits[i].completed=done;});
+  demo.history[today]={habits:todayStatus,names:todayNames};
+  demo.tasks=[
+    {id:"demo-task-1",name:"Подготовить план на неделю",description:"Определить три главных дела",priority:"high",deadline:"",status:"done",pinned:false,createdAt:now.toISOString()},
+    {id:"demo-task-2",name:"Разобрать фотографии для альбома",description:"Выбрать лучшие снимки",priority:"medium",deadline:"",status:"active",pinned:false,createdAt:now.toISOString()},
+    {id:"demo-task-3",name:"Записаться на мастер-класс",description:"Посмотреть расписание занятий",priority:"low",deadline:"",status:"active",pinned:false,createdAt:now.toISOString()}
+  ];
+  demo.ideas=[
+    {id:"demo-idea-1",text:"Сделать небольшой альбом с фотографиями природы",tags:["творчество"],status:"new",createdAt:now.toISOString()},
+    {id:"demo-idea-2",text:"Организовать уютный уголок для чтения",tags:["дом","уют"],status:"done",createdAt:now.toISOString()},
+    {id:"demo-idea-3",text:"Попробовать новый вид рукоделия",tags:["хобби"],status:"new",createdAt:now.toISOString()}
+  ];
+  demo.awards={3:today,7:today,30:today};
+  demo.settings.notifications=false;
+  demo.settings.taskReminders=false;
+  demo.settings.habitReminders=false;
+  return demo;
+}
+const demoFirstVisit=localStorage.getItem(STORAGE_KEY)===null;
+let data = demoFirstVisit?makeDemoData():loadData();
+if(demoFirstVisit){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(e){console.warn("Демо-данные не удалось сохранить",e);}}
+
 let activeTab = "daily";
 let taskFilter = "all";
 let taskSort = "deadline";
@@ -710,8 +795,10 @@ function niceDate(value) {
 /* ===== История и ежедневный сброс ===== */
 function snapshot(date) {
   if (!data.history[date]) data.history[date]={habits:{}};
+  data.history[date].names ||= {};
   for (const habit of data.habits) {
     data.history[date].habits[habit.id]=!!habit.completed;
+    data.history[date].names[habit.id]=habit.name;
   }
 }
 
@@ -728,6 +815,7 @@ function syncDay() {
 
   const previous = data.lastDate;
   if (previous) snapshot(previous);
+  awardProgress();
 
   // Сохраняем дату последнего успешного выполнения.
   for (const h of data.habits) {
@@ -762,12 +850,74 @@ function calculateStreak(habit) {
   return streak;
 }
 
+/* ===== Награды за дни с выполнением не менее 80% привычек ===== */
+const AWARD_LEVELS=[
+  {days:3,icon:"🥉",name:"Первый успех"},
+  {days:7,icon:"🥈",name:"Уверенный шаг"},
+  {days:30,icon:"🥇",name:"Мастер привычек"}
+];
+function awardDayIsSuccessful(date){
+  const record=data.history[date];
+  if(!record || !record.habits) return false;
+  const statuses=Object.values(record.habits);
+  if(statuses.length===0) return false;
+  return statuses.filter(Boolean).length/statuses.length>=0.8;
+}
+function awardProgress(){
+  const today=localDate();
+  // Непрерывная серия от последнего завершённого дня или от сегодняшнего,
+  // если сегодня уже достигнут порог.
+  let cursor=awardDayIsSuccessful(today)?today:dayBefore(today);
+  let current=0;
+  while(awardDayIsSuccessful(cursor) && current<100000){
+    current++;
+    cursor=dayBefore(cursor);
+  }
+  // Ищем максимальную серию в сохранённой истории; полученные награды
+  // сохраняются отдельно и не пропадают при последующих пропусках.
+  const dates=Object.keys(data.history).filter(d=>d<=today).sort();
+  let best=0,run=0,previous=null;
+  for(const date of dates){
+    if(awardDayIsSuccessful(date)){
+      run=(previous && dayBefore(date)===previous)?run+1:1;
+      best=Math.max(best,run);
+    }else run=0;
+    previous=date;
+  }
+  data.awards ||= {};
+  let changed=false;
+  for(const level of AWARD_LEVELS){
+    if(best>=level.days && !data.awards[level.days]){
+      data.awards[level.days]=today;
+      changed=true;
+    }
+  }
+  if(changed) save();
+  return {current};
+}
+function renderAwards(){
+  const {current}=awardProgress();
+  const tiles=AWARD_LEVELS.map(level=>{
+    const earned=!!data.awards?.[level.days];
+    return `<div class="award-tile ${earned?"earned":"locked"}" title="${level.days} дней подряд с выполнением не менее 80% привычек" aria-label="${escapeHTML(level.name)}: ${earned?"получена":"пока не получена"}">
+      <span class="award-icon">${level.icon}</span>
+      <strong>${escapeHTML(level.name)}</strong>
+      <span class="small">${level.days} дней подряд · ${earned?"Получена":"Ещё впереди"}</span>
+    </div>`;
+  }).join("");
+  el("achievementCard").innerHTML=`<strong>🏆 Мои достижения</strong>
+    <p class="small">Успешный день — выполнено не менее 80% привычек. Полученные награды остаются с тобой.</p>
+    <div class="award-grid">${tiles}</div>
+    <p class="small" style="margin-top:10px">Текущая серия: ${current} дн. подряд.</p>`;
+}
+
 function markHabit(habit,checked) {
   habit.completed=checked;
   const today=localDate();
 
   if (!data.history[today]) data.history[today]={habits:{}};
   data.history[today].habits[habit.id]=checked;
+  (data.history[today].names ||= {})[habit.id]=habit.name;
 
   if (checked) habit.lastCompletedDate=today;
   else if (habit.lastCompletedDate===today) {
@@ -815,9 +965,7 @@ function renderDaily() {
       ?"Сегодня ты выполнила всё задуманное — отлично! 🌟"
       :`Сегодня выполнено ${done} из ${total} привычек. Ты молодец!`;
 
-  const longest=data.habits.reduce((n,h)=>Math.max(n,calculateStreak(h)),0);
-  const award=longest>=30?"🏆 30 дней подряд":longest>=7?"🏅 7 дней подряд":longest>=3?"🌟 3 дня подряд":null;
-  el("achievementCard").innerHTML=`<strong>🏆 Достижения</strong><p class="small">${award?`Твоя награда: ${award}`:"Первая награда появится после 3 дней выполнения одной привычки подряд."}</p>`;
+  renderAwards();
   const list=el("habitList");
   if (!total) {
     list.innerHTML=emptyState("🌱","Пока нет привычек — добавь первую!",
@@ -868,6 +1016,7 @@ function markHabitSilent(h,checked) {
   const today=localDate();
   if (!data.history[today]) data.history[today]={habits:{}};
   data.history[today].habits[h.id]=checked;
+  (data.history[today].names ||= {})[h.id]=h.name;
   if (checked) h.lastCompletedDate=today;
   else if (h.lastCompletedDate===today) h.lastCompletedDate=null;
 }
@@ -1444,7 +1593,8 @@ async function importJSON(event) {
     if (!confirm("Заменить все текущие привычки, задачи и идеи данными из файла?")) return;
     const previous=data;
     data={...defaultData(),...incoming,
-      settings:{...defaultData().settings,...incoming.settings}};
+      settings:{...defaultData().settings,...incoming.settings},
+      awards:incoming.awards && typeof incoming.awards==="object" ? incoming.awards:{} };
     if (!save()) {data=previous;return;}
     syncDay();applyTheme();render();closeEditor();checkReminders();
     notify("Данные восстановлены из резервной копии.");
@@ -1585,30 +1735,137 @@ el("dismissReminders").addEventListener("click",()=>{
 
 
 /* ===== Аналитика и системные уведомления ===== */
+let chartPeriod=7;
+document.querySelectorAll("[data-chart-period]").forEach(btn=>btn.addEventListener("click",()=>{
+  chartPeriod=Number(btn.dataset.chartPeriod);
+  document.querySelectorAll("[data-chart-period]").forEach(b=>{
+    const selected=Number(b.dataset.chartPeriod)===chartPeriod;
+    b.classList.toggle("selected",selected);
+    b.setAttribute("aria-pressed",String(selected));
+  });
+  renderAnalytics();
+}));
+let calendarMonth=new Date();
+calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);
 function renderAnalytics(){
   const today=localDate();
-  const days=Array.from({length:35},(_,i)=>dateDaysAgo(34-i));
   const countFor=date=>{
     const entry=data.history[date]?.habits||{};
     return Object.values(entry).filter(Boolean).length;
   };
   const total=data.habits.length;
   const completedToday=data.habits.filter(h=>h.completed).length;
-  const week=days.slice(-7);
-  const weeklySum=week.reduce((sum,d)=>sum+countFor(d),0);
-  const weeklyPossible=total*7;
+  // Начало текущей недели — понедельник, независимо от сегодняшнего дня.
+  const now=new Date();
+  const weekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  weekStart.setDate(weekStart.getDate()-(weekStart.getDay()+6)%7);
+  const dateAtOffset=(start,offset)=>{
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate());
+    d.setDate(d.getDate()+offset);
+    return localDate(d);
+  };
+  const currentWeek=Array.from({length:7},(_,i)=>dateAtOffset(weekStart,i));
+  const elapsedWeek=currentWeek.filter(d=>d<=today);
+  const weeklySum=elapsedWeek.reduce((sum,d)=>sum+countFor(d),0);
+  const weeklyPossible=total*elapsedWeek.length;
   const percent=weeklyPossible?Math.round(weeklySum/weeklyPossible*100):0;
-  el("analyticsStats").innerHTML=`<div class="stat"><b>${completedToday}/${total}</b><span>Сегодня</span></div><div class="stat"><b>${percent}%</b><span>За неделю</span></div><div class="stat"><b>${data.tasks.filter(t=>t.status==="done").length}</b><span>Задач выполнено</span></div><div class="stat"><b>${data.ideas.filter(i=>i.status==="done").length}</b><span>Идей реализовано</span></div>`;
-  el("weekChart").innerHTML=week.map(d=>{
-    const done=countFor(d),value=total?Math.round(done/total*100):0;
-    const label=new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{weekday:"short"});
-    return `<div class="week-col" title="${d}: ${done} из ${total}"><span>${value}%</span><div class="week-track"><div class="week-bar" style="height:${value}%"></div></div><small>${label}</small></div>`;
-  }).join("");
-  el("activityCalendar").innerHTML=days.map(d=>{
+  el("analyticsStats").innerHTML=`<div class="stat"><b>${completedToday}/${total}</b><span>Сегодня</span></div><div class="stat"><b>${percent}%</b><span>За текущую неделю</span></div><div class="stat"><b>${data.tasks.filter(t=>t.status==="done").length}</b><span>Задач выполнено</span></div><div class="stat"><b>${data.ideas.filter(i=>i.status==="done").length}</b><span>Идей реализовано</span></div>`;
+  el("chartTitle").textContent=chartPeriod===7?"Прогресс за текущую неделю":"Прогресс за месяц по неделям";
+  el("chartDescription").textContent=chartPeriod===7
+    ?"С понедельника по воскресенье. Будущие дни пока без результата."
+    :"Календарные недели: с понедельника по воскресенье. Текущая неделя — средний результат только за прошедшие дни; будущие дни не учитываются.";
+  el("weekChart").classList.remove("month-view");
+  const shortDate=d=>new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"short"});
+  if(chartPeriod===7){
+    el("weekChart").innerHTML=currentWeek.map(d=>{
+      const future=d>today;
+      const done=future?0:countFor(d);
+      const value=!future&&total?Math.round(done/total*100):0;
+      const label=new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{weekday:"short"});
+      const fullDate=new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+      return `<div class="week-col" title="${fullDate}: ${future?"день ещё не наступил":`${done} из ${total} (${value}%)`}"><span>${future?"—":value+"%"}</span><div class="week-track"><div class="week-bar" style="height:${value}%"></div></div><small>${label}</small></div>`;
+    }).join("");
+  } else {
+    // Календарные недели текущего месяца, а не произвольные блоки по 7 дней.
+    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0);
+    const firstMonday=new Date(monthStart);
+    firstMonday.setDate(firstMonday.getDate()-(firstMonday.getDay()+6)%7);
+    const groups=[];
+    for(let start=new Date(firstMonday);start<=monthEnd;start.setDate(start.getDate()+7)){
+      const dates=Array.from({length:7},(_,i)=>dateAtOffset(start,i))
+        .filter(d=>d>=localDate(monthStart)&&d<=localDate(monthEnd));
+      groups.push(dates);
+    }
+    el("weekChart").innerHTML=groups.map((dates,i)=>{
+      const elapsed=dates.filter(d=>d<=today);
+      const done=elapsed.reduce((sum,d)=>sum+countFor(d),0);
+      const possible=total*elapsed.length;
+      const value=possible?Math.round(done/possible*100):0;
+      const period=`${shortDate(dates[0])} – ${shortDate(dates[dates.length-1])}`;
+      return `<div class="week-col" title="${period}: ${elapsed.length?`${done} из ${possible} (${value}%)`:"неделя ещё не наступила"}"><span>${elapsed.length?value+"%":"—"}</span><div class="week-track"><div class="week-bar" style="height:${value}%"></div></div><small>${i+1}-я нед.</small></div>`;
+    }).join("");
+  }
+  const year=calendarMonth.getFullYear(),month=calendarMonth.getMonth();
+  const numberOfDays=new Date(year,month+1,0).getDate();
+  const offset=(new Date(year,month,1).getDay()+6)%7;
+  el("calendarMonthTitle").textContent=calendarMonth.toLocaleDateString("ru-RU",{month:"long",year:"numeric"});
+  const blank=Array.from({length:offset},()=>'<span class="calendar-empty" aria-hidden="true"></span>').join("");
+  const monthDays=Array.from({length:numberOfDays},(_,i)=>{
+    const day=i+1;
+    const d=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
     const count=countFor(d),level=total?Math.min(4,Math.ceil(count/total*4)):0;
-    return `<div class="activity-day level-${level}" title="${d}: ${count} выполнено"><span>${Number(d.slice(-2))}</span></div>`;
+    const todayClass=d===today?" today":"";
+    return `<button type="button" class="activity-day level-${level}${todayClass}" data-day-detail="${d}" title="${d}: ${count} выполнено" aria-label="Результаты за ${day} число: ${count} выполнено"><span>${day}</span></button>`;
   }).join("");
+  el("activityCalendar").innerHTML=blank+monthDays;
 }
+el("prevCalendarMonth").addEventListener("click",()=>{
+  calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);
+  renderAnalytics();
+});
+el("nextCalendarMonth").addEventListener("click",()=>{
+  calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1);
+  renderAnalytics();
+});
+/* ===== Просмотр истории за выбранную дату ===== */
+let dayDetailPreviousFocus=null;
+function openDayDetail(date){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
+  const entry=data.history[date]||{};
+  const saved=entry.habits||{};
+  const names=entry.names||{};
+  const ids=new Set([...Object.keys(saved)]);
+  // Для сегодняшнего дня показываем также ещё не отмеченные привычки.
+  if(date===localDate()) data.habits.forEach(h=>ids.add(h.id));
+  const currentNames=new Map(data.habits.map(h=>[h.id,h.name]));
+  const items=[...ids].map(id=>({name:names[id]||currentNames.get(id)||"Привычка удалена",done:!!saved[id]}));
+  const done=items.filter(x=>x.done).length;
+  const pretty=new Date(date+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"});
+  el("dayDetailTitle").textContent=pretty;
+  el("dayDetailContent").innerHTML=items.length
+    ? `<p class="small">Выполнено ${done} из ${items.length}</p><ul class="day-detail-list">${items.map(item=>`<li><span class="${item.done?"completed":"incomplete"}">${item.done?"✓ Выполнено":"○ Не выполнено"}</span> — ${escapeHTML(item.name)}</li>`).join("")}</ul>`
+    : `<p class="small">За этот день нет сохранённых записей о привычках.</p>`;
+  dayDetailPreviousFocus=document.activeElement;
+  el("dayDetailBackdrop").classList.remove("hidden");
+  el("closeDayDetail").focus();
+}
+function closeDayDetail(){
+  el("dayDetailBackdrop").classList.add("hidden");
+  dayDetailPreviousFocus?.focus?.();
+}
+el("activityCalendar").addEventListener("click",event=>{
+  const button=event.target.closest("[data-day-detail]");
+  if(button)openDayDetail(button.dataset.dayDetail);
+});
+el("closeDayDetail").addEventListener("click",closeDayDetail);
+el("dayDetailBackdrop").addEventListener("click",event=>{
+  if(event.target===el("dayDetailBackdrop"))closeDayDetail();
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&!el("dayDetailBackdrop").classList.contains("hidden"))closeDayDetail();
+});
+
 function sendSystemNotification(title,body){
   if(!("Notification" in window) || Notification.permission!=="granted")return false;
   try {new Notification(title,{body,tag:"moy-ritm-"+Date.now()+"-"+Math.random().toString(36).slice(2)});return true;}
@@ -1659,9 +1916,9 @@ el("testNotification").addEventListener("click",async()=>{
 el("profileExport").addEventListener("click",exportJSON);
 el("profileImport").addEventListener("change",importJSON);
 el("clearAllData").addEventListener("click",()=>{
-  if(!confirm("Удалить ВСЕ привычки, задачи, идеи и историю? Это действие нельзя отменить. Сначала экспортируй данные."))return;
-  if(!confirm("Последнее подтверждение: действительно очистить все данные?"))return;
-  data=defaultData();pendingReminders.clear();save();applyTheme();render();syncSettingsUI();notify("Все данные очищены.");
+  if(!confirm("Восстановить исходные демонстрационные записи? Изменения, внесённые в демоверсии, будут потеряны."))return;
+  if(!confirm("Подтвердить восстановление демонстрационных записей?"))return;
+  data=makeDemoData();pendingReminders.clear();save();applyTheme();render();syncSettingsUI();notify("Демонстрационные данные восстановлены.");
 });
 
 /* ===== Запуск ===== */
